@@ -1,0 +1,133 @@
+In the last lesson, we covered the basics 
+of semantic search and saw that it worked 
+pretty well for a good amount of use cases. 
+But we also saw some edge cases and saw how 
+things could go a little bit wrong. In this lesson, we're going to deep 
+dive on retrieval and cover a few more advanced methods for overcoming 
+those edge cases. 
+I'm really excited by this because I think retrieval 
+is something that is new and a lot of the techniques we're 
+talking about have popped up in the past few months or so. And 
+this is a cutting edge topic and so you 
+guys are going to be right at the forefront. Let's have some 
+fun. 
+In this lesson, we're going to talk about retrieval. This 
+is important at query time, when you've got a query that comes in 
+and you want to retrieved the most relevant splits. We 
+talked in the previous lesson about semantic 
+similarity search, but we're going to talk about a few 
+different and more advanced methods here. The first one 
+we're going to cover is Maximum Marginal Relevance, or MMR. And so 
+the idea behind this is that if you just always 
+take the documents that are most similar to 
+the query in the embedding space, you may actually miss 
+out on diverse information, as we saw in 
+one of the edge cases. In this example, we've got a chef asking about all white mushrooms. 
+And so if we take a look at the most similar 
+results, those would be the first two documents, where they have a lot 
+of information similar to the query about a fruiting 
+body and being all white. But we really want to 
+make sure that we also get other information, like the fact that 
+it's really poisonous. And so this is where using 
+MMR comes into play, as it will select for a 
+diverse set of documents. 
+The idea behind MMR is that we send a query in, 
+and then we initially get back a set of responses, with 
+"fetch_k" being a parameter that we can control in order 
+to determine how many responses we get. This is based solely 
+on semantic similarity. From there, we then work with that 
+smaller set of documents and optimize for not 
+only the most relevant ones, based on semantic similarity, but 
+also ones that are diverse. And from that set of documents, we 
+choose a final "k" to return to the user. 
+Another type of retrieval we can do is what we call self-query. So 
+this is useful when you get questions that aren't solely 
+about the content that you want to look 
+up semantically, but also include some mention of some 
+metadata that you want to do a filter on. So let's take the 
+question, what are some movies about aliens made 
+in 1980? This really has two components to it. It's got a 
+semantic part, the aliens bit. So we want to 
+look up aliens in our database of movies. But it's also got 
+a piece that really refers to the metadata about each 
+movie, which is the fact that the year should be 1980. 
+What we can do is we can use a language model itself to 
+split that original question into two separate things, 
+a filter and a search term. Most vector stores support a 
+metadata filter. So you can easily filter 
+records based on metadata, like the year being 1980. 
+ 
+Finally, we'll talk about compression. This 
+can be useful to really pull out only 
+the most relevant bits of the retrieved passages. For 
+example, when asking a question, you get back the whole 
+document that was stored, even if only the first one or two sentences 
+are the relevant parts. With compression, you can then run 
+all those documents through a language model and extract the most relevant 
+segments and then pass only the most relevant segments 
+into a final language model call. This 
+comes at the cost of making more calls 
+to the language model, but it's also really good for focusing the final 
+answer on only the most important things. And so it's a bit 
+of a tradeoff. Let's see these different techniques in action. We're going to 
+start by loading the environment variables as we always do. 
+ 
+Let's then import Chroma and OpenAI as we used them before. And 
+we can see by looking at the collection count that it's got 
+the 209 documents that we loaded in before. Let's now go 
+over the example of max marginal relevance. And so we'll 
+load in the text from the example where we have the information about mushrooms. For 
+this example, we'll create a small database 
+that we can just use as a toy example. We've got our 
+question, and now we can run a similarity search. 
+We'll set "k=2" to only return the two most relevant documents. And we 
+can see that there is no mention of the fact 
+that it is poisonous. 
+Let's now run it with MMR. While it's passing "k=2", we still want 
+to return two documents, but let's set "fetch_k=3", where we fetch all three documents 
+originally. 
+We can now see that the information that is 
+poisonous is returned among the documents 
+that we retrieved. 
+Let's go back to one of the examples from 
+the previous lesson when we asked about MATLAB 
+and got back documents that had repeated information. 
+To refresh your memory, we can take a look at 
+the first two documents, just looking at the first 
+few characters because they're pretty long otherwise, and we 
+can see that they're the same. When we run 
+MMR on these results, we can see that the first one is the same as 
+before because that's the most similar. 
+But when we go on to the second one, we can see that it's different. It's getting 
+some diversity in the responses. 
+Let's now move on to the self-query example. This is the one where we 
+had the question, what did they say about regression in 
+the third lecture? 
+And it returned results from not just the third lecture, 
+but also the first and the second. If we were fixing this by hand, 
+what we would do is we'd specify a metadata filter. 
+So we'd pass in this information that we want the 
+source to be equal to the third lecture PDF. 
+And then if we look at the documents 
+that would be retrieved, they'd all be from exactly that lecture. 
+We can use a language model to do this for us, so we don't 
+have to manually specify that. 
+To do this, we'll import a language model, OpenAI. We'll 
+import a retriever called the self-query retriever, and 
+then we'll import attribute info, which is where we 
+can specify different fields in the metadata and 
+what they correspond to. 
+We only have two fields in the metadata, source and page. 
+We fill out a description of the name, the description, and the type for 
+each of these attributes. 
+This information is actually going to be passed 
+to the language model, so it's important to make it 
+as descriptive as possible. 
+We'll then specify some information about what's actually 
+in this document store. 
+We'll initialize the language model, and then we'll initialize the self-query retriever using 
+the "from_llm" method and passing in the language model, the underlying vector 
+database that we're going to query, the 
+information about the description and the metadata, and 
+then we'll also pass in "verbose=True". 
+ 

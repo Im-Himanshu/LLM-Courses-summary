@@ -1,0 +1,133 @@
+We've now got our document split up into small, semantically
+meaningful chunks, and it's time to put these chunks
+into an index, whereby we can easily retrieve them when it
+comes time to answer questions about this corpus of data. To do
+that, we're going to utilize embeddings and vector stores. Let's see what those
+are. We covered this briefly in the previous course,
+but we're going to revisit it for a few reasons. First, these are incredibly
+important for building chatbots over your data. And
+second, we're going to go a bit deeper, and we're going to talk about
+edge cases, and where this generic method can actually
+fail. Don't worry, we're going to fix those later
+on.
+But for now, let's talk about vector stores and embeddings. And
+this comes after text splitting, when we're ready to store the
+documents in an easily accessible format. What embeddings
+are? They take a piece of text, and they
+create a numerical representation of that text. Text
+with similar content will have similar vectors in this
+numeric space. What that means is we can
+then compare those vectors and find pieces of
+text that are similar. So, in the example below, we can
+see that the two sentences about pets are
+very similar, while a sentence about a pet and
+a sentence about a car are not very similar. As a
+reminder of the full end-to-end workflow, we start with documents,
+we then create smaller splits of those documents,
+we then create embeddings of those documents, and then we
+store all of those in a vector store. A vector store is
+a database where you can easily look up
+similar vectors later on. This will become useful
+when we're trying to find documents that are relevant for
+a question at hand. We can then take the
+question at hand, create an embedding, and then do comparisons to
+all the different vectors in the vector store,
+and then pick the n most similar. We then take those n
+most similar chunks, and pass them along with
+the question into an LLM, and get back an answer.
+We'll cover all of that later on. For now, it's time to deep
+dive on embeddings and vector stores themselves.
+
+To start, we'll once again set the appropriate environment variables. From
+here on out, we're going to be working with the
+same set of documents. These are the CS229 lectures. We're going to
+load a few of them here. Notice that we're actually going to
+duplicate the first lecture. This is for the
+purposes of simulating some dirty data. After the documents are
+loaded, we can then use the recursive character text
+splitter to create chunks. We can see that
+we've now created over 200 different chunks. Time to move on to
+the next section and create embeddings for all of them.
+We'll use OpenAI to create these embeddings. Before jumping into a real-world
+example, let's try it out with
+a few toy test cases just to get
+a sense for what's going on underneath the hood. We've got a
+few example sentences where the first two are very similar and
+the third one is unrelated.
+
+We can then use the embedding class to
+create an embedding for each sentence.
+We can then use NumPy to compare them, and see which ones are most similar.
+We expect that the first two sentences should be very similar,
+and then the first and second compared to the third shouldn't
+be nearly as similar. We'll use a dot product to compare
+the two embeddings. If you don't know what
+a dot product is, that's fine. The important thing to know is that higher is
+better. Here we can see that the first two embeddings
+have a pretty high score of 0.96. If we compare the first
+embedding to the third one, we can see that it's
+significantly lower at 0.77. And if we compare the second to
+the third, we can see it's right about the same at 0.76. Now
+is a good time to pause, and try out a few sentences of your own,
+and see what the dot product is. Let's now get back to the real-world example. It's
+time to create embeddings for all the chunks of the PDFs
+and then store them in a vector store.
+
+The vector store that we'll use for this lesson is Chroma. So,
+let's import that. LangChain has integrations with lots, over 30
+different vector stores. We choose Chroma because it's lightweight and
+in memory, which makes it very easy to get up
+and started with. There are other vector stores that offer
+hosted solutions, which can be useful when you're trying to persist
+large amounts of data or persist it in cloud storage somewhere. We're
+going to want to save this vector store
+so that we can use it in future lessons. So, let's create
+a variable called persist directory, which we will use later on
+at docs slash Chroma. Let's also just make sure that nothing
+is there already. If there's stuff there already, it can
+throw things off and we don't want that to happen. So, let's RM dash
+RF docs dot Chroma just to make sure that there's nothing there. Let's
+now create the vector store. So, we call Chroma from documents,
+passing in splits, and these are the splits that we created earlier,
+passing in embedding.
+
+And this is the open AI embedding model
+and then passing in persist directory, which is a Chroma
+specific keyword argument that allows us to save
+the directory to disk. If we take a look at
+the collection count after doing this, we can see that it's 209, which
+is the same as the number of splits that we had from before. Let's now
+start using it. Let's think of a question that we can ask
+of this data. We know that this is about a class lecture. So, let's
+ask if there is any email that we can ask for help if we need
+any help with the course or material or anything like that. We're
+going to use the similarity search method, and
+we're going to pass in the
+question, and then we'll also pass in K equals three.
+This specifies the number of documents that we want to
+return. So, if we run that and we look at the length of the documents,
+we can see that it's three as we specified. If we take
+a look at the content of the first document, we can
+see that it is in fact about an email address, cs229-qa.cs.stanford.edu. And
+this is the email that we can send questions to and
+is read by all the TAs.
+
+After doing so, let's make sure to persist the vector database so
+that we can use it in future lessons by running vectordb.persist. This has
+covered the basics of semantic search and shown us that we can
+get pretty good results based on just embeddings alone. But it
+isn't perfect and here we'll go over a few edge cases and show where
+this can fail. Let's try a new question. What did they say about
+MATLAB? Let's run this specifying K equals five and get back
+some results. If we take a look at
+the first two results, we can see that they're actually
+identical. This is because when we loaded in
+the PDFs, if you remember, we specified on purpose
+a duplicate entry. This is bad because we've got the
+same information in two different chunks and we're going to
+be passing both of these chunks to the language model down
+the line.
+There's no real value in the second piece of
+information and it would be much better if there was a different
+distinct chunk that the language model could learn from. One
+of the things that we'll cover in the next lesson is how to retrieve

@@ -1,0 +1,133 @@
+We just went over how to load documents 
+into a standard format. Now, we're going to talk about how to split them 
+up into smaller chunks. This may sound really easy, but 
+there's a lot of subtleties here that make a big 
+impact down the line. Let's jump into it! 
+Document splitting happens after you load your data 
+into the document format. But before, 
+it goes into the vector store, and this may seem really simple. 
+You can just split the chunks according to 
+the lengths of each character or something like that. 
+But as an example of why this is both trickier and very 
+important down the line, let's take a look at this example here. We've 
+got a sentence about the Toyota Camry and some specifications. 
+And if we did a simple splitting, we could 
+end up with part of the sentence in one chunk, and the 
+other part of the sentence in another chunk. And then, 
+when we're trying to answer a question down 
+the line about what are the specifications on 
+the Camry, we actually don't have the right information in either chunk, 
+and so it's split apart. And so, we wouldn't be able to 
+answer this question correctly. So, there's a lot of nuance and 
+importance in how you split the chunks so that 
+you get semantically relevant chunks together. The basis 
+of all the text splitters in Lang Chain involves splitting on 
+chunks in some chunk size with 
+some chunk overlap. And so, we have a little diagram here below 
+to show what that looks like. So, the 
+chunk size corresponds to the size of a chunk, and the 
+size of the chunk can be measured in a few different ways. And we'll talk about a 
+few of those in the lesson. And so, we 
+allow passing in a length function to measure the size of 
+the chunk. This is often characters or tokens. 
+ 
+A chunk overlap is generally kept as a 
+little overlap between two chunks, like a sliding window as we 
+move from one to the other. And this allows for 
+the same piece of context to be at the end of one chunk and at the 
+start of the other and helps create some 
+notion of consistency. The text splitters in 
+Lang Chain all have a create documents and 
+a split documents method. This involves the same 
+logic under the hood, it just exposes 
+a slightly different interface, one that takes in a 
+list of text and another that takes in a list of documents. 
+There are a lot of different types of 
+splitters in Lang Chain, and we'll cover a few of them in this lesson. But, 
+I would encourage you to check out the rest of them 
+in your spare time. These text splitters vary across 
+a bunch of dimensions. 
+They can vary on how they split the chunks, what characters go into that. 
+They can vary on how they measure the length of the chunks. 
+Is it by characters? Is it by tokens? 
+There are even some that use other smaller 
+models to determine when the end of a sentence might be and 
+use that as a way of splitting chunks. 
+Another important part of splitting into chunks is also 
+the metadata. Maintaining the same metadata across all chunks, 
+but also adding in new pieces of metadata when relevant, 
+and so there are some text splitters that 
+are really focused on that. The splitting of chunks can 
+often be specific on the type of document that we're 
+working with, and this is really apparent when you're splitting 
+on code. 
+So, we have a language text splitter that has a bunch of different 
+separators for a variety of different 
+languages like Python, Ruby, C. And when splitting these documents, 
+it takes those different languages and 
+the relevant separators for those languages 
+into account when it's doing the splitting. First, we're going 
+to set up the environment as before by loading the 
+Open AIAPI key. Next, we're going to import two of the most 
+common types of text splitters in Lang Chain. The recursive character 
+text splitter and the character text 
+splitter. We're going to first play around with a few 
+toy use cases just to get a sense of what 
+exactly these do. And so, we're going to set a relatively small chunk size of 
+26, and an even smaller chunk overlap of 4, just so we can see 
+what these can do. 
+Let's initialize these two different text splitters as R 
+splitter and C splitter. And then let's take a look at a few 
+different use cases. Let's load in the first string. A, B, C, D, all the 
+way down to Z. And let's look at what happens when we use the 
+various splitters. When we split it with the recursive character 
+text splitter it still ends up as one 
+string. This is because this is 26 characters long and 
+we've specified a chunk size of 26. So, there's actually no need to 
+even do any splitting here. Now, let's do it on a slightly 
+longer string where it's longer than the 26 characters that we've 
+specified as the chunk size. 
+Here we can see that two different chunks are created. 
+The first one ends at Z, so that's 26 characters. The 
+next one we can see starts with W, X, Y, Z. Those 
+are the four chunk overlaps, And then it continues with the 
+rest of the string. Let's take a look at a slightly more complex string 
+where we have a bunch of spaces between 
+characters. We can now see that it's split into 
+three chunks because there are spaces, so it takes 
+up more space. 
+And so, if we look at the overlap we can see that 
+in the first one there's L and M, and L and M are then also 
+present in the second one. That seems like only two 
+characters but because of the space both in between the L and 
+M, and then also, before the L and after the M that actually 
+counts as the four that makes up the 
+chunk overlap. Let's now try with the character 
+text splitter, And we can see that when we 
+run it doesn't actually try to split it at all. And so, what's 
+going on here? The issue is the character text splitter splits on a 
+single character and by default that character is a 
+newline character. But here, there are no newlines. 
+If we set the separator to be an empty 
+space, we can see what happens then. Here it's split in 
+the same way as before. This is a good point 
+to pause the video, and try some new examples both with different 
+strings that you've made up. And then, also 
+swapping out the separators and seeing what happens. It's 
+also interesting to experiment with the chunk size, and chunk 
+overlap, and just generally get a sense for 
+what's happening in a few toy examples so 
+that when we move on to more real-world examples, you'll 
+have good intuition as to what's happening underneath the 
+scenes. Now, let's try it out on some more real-world examples. We've 
+got this long paragraph here, and we can see that 
+right about here, we have this double newline symbol 
+which is a typical separator between paragraphs. Let's check out the length of this 
+piece of text, and we can 
+see that it's just about 500. And 
+now, let's define our two text splitters. We'll work with the 
+character text splitter as before with the space as a separator and then we'll 
+initialize the recursive character text splitter. And here, 
+we pass in a list of separators, and these are 
+the default separators but we're just putting 
+them in this notebook to better show what's going
